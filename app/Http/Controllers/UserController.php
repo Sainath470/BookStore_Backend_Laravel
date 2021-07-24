@@ -6,8 +6,6 @@ use App\Models\BookStoreUsers;
 use Illuminate\Http\Request;
 use App\Models\PasswordReset;
 use App\Notifications\ResetPasswordNotification;
-use Illuminate\Auth\Notifications\ResetPassword;
-// use App\Notifications\ResetPasswordNotification;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -102,5 +100,34 @@ class UserController extends Controller
             $user->notify(new ResetPasswordNotification($passwordReset->token));
         }
         return response()->json(['status' => 200, 'message' => 'we have emailed your password reset link to respective mail']);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validate = FacadesValidator::make($request->all(), [
+            'new_password' => 'min:6|required|',
+            'confirm_password' => 'required|same:new_password'
+        ]);
+
+        if ($validate->fails()) {
+            return response()->json(['status' => 201, 'message' => "Password doesn't match"]);
+        }
+        $passwordReset = PasswordReset::where([
+            ['token', $request->bearerToken()]
+        ])->first();
+
+        if (!$passwordReset) {
+            return response()->json(['status' => 401, 'message' => 'This token is invalid']);
+        }
+        $user = BookStoreUsers::where('email', $passwordReset->email)->first();
+
+        if (!$user) {
+            return response()->json(['status' => 201, 'message' => "we can't find the user with that e-mail address"], 201);
+        } else {
+            $user->password = bcrypt($request->new_password);
+            $user->save();
+            $passwordReset->delete();
+            return response()->json(['status' => 201, 'message' => 'Password reset successfull!']);
+        }
     }
 }

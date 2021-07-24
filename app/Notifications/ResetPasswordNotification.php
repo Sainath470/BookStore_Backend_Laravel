@@ -40,7 +40,7 @@ class ResetPasswordNotification extends Notification
      * @param  mixed  $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
-    public function toMail($temp)
+    public function toMail()
     {
         return (new MailMessage)
             ->subject(Lang::get('Reset Password Link!'))
