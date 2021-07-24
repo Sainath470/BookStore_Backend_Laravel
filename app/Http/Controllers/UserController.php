@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BookStoreUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
@@ -42,5 +43,40 @@ class UserController extends Controller
         }
         $user->save();
         return response()->json(['status' => 201, 'message' => 'User succesfully registered!']);
+    }
+
+    public function login(Request $request)
+    {
+        $this->validate($request, [
+            'email' => 'required|email',
+            'password' => 'required|
+            min:5',
+        ]);
+
+        $email = $request->get('email');
+        $user = BookStoreUsers::where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json(['status' => 400, 'message' => "Invalid credentials! email doesn't exists"]);
+        }
+        if (!$token = JWTAuth::fromUser($user)) {
+
+            return response()->json(['status' => 401, 'message' => 'Unauthenticated']);
+        }
+
+        return $this->generateToken($token);
+    }
+
+    /**
+     * generates token 
+     * @creates a streamed response
+     */
+    protected function generateToken($token)
+    {
+        return response()->json([
+            'status' => 200,
+            'message' => 'succesfully logged in',
+            'token' => $token
+        ]);
     }
 }
