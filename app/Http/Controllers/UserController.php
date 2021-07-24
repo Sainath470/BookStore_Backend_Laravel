@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\BookStoreUsers;
 use Illuminate\Http\Request;
+use App\Models\PasswordReset;
+use App\Notifications\ResetPasswordNotification;
+use Illuminate\Auth\Notifications\ResetPassword;
+// use App\Notifications\ResetPasswordNotification;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -78,5 +82,25 @@ class UserController extends Controller
             'message' => 'succesfully logged in',
             'token' => $token
         ]);
+    }
+
+
+    public function forgotPassword(Request $request)
+    {
+        $user = BookStoreUsers::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['status' => 401, 'message' => "we can't find a user with that email address."]);
+        }
+        $passwordReset = PasswordReset::updateOrCreate(
+            ['email' => $user->email],
+            [
+                'email' => $user->email,
+                'token' => JWTAuth::fromUser($user)
+            ]
+        );
+        if ($user && $passwordReset) {
+            $user->notify(new ResetPasswordNotification($passwordReset->token));
+        }
+        return response()->json(['status' => 200, 'message' => 'we have emailed your password reset link to respective mail']);
     }
 }
