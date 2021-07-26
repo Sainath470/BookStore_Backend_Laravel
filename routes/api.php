@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\BooksController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,4 +25,9 @@ Route::group([
     Route::post('signout', [UserController::class, 'signout']);
     Route::post('forgotPassword', [UserController::class, 'forgotPassword']);
     Route::post('resetPassword', [UserController::class, 'resetPassword']);
+
+    Route::post('insertBook', [BooksController::class, 'addBook']);
+    Route::get('displayBooks', [BooksController::class, 'displayBooks']);
+    Route::post('addToCart', [BooksController::class, 'addToCart']);
+    Route::get('displayBooksInCart', [BooksController::class, 'displayBooksInCart']);
 });

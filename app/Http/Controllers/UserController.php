@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BookStoreUsers;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\PasswordReset;
 use App\Notifications\ResetPasswordNotification;
+use CreateBooksTable;
+use CreateUsersTable;
+use Exception;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\JWTAuth as JWTAuthJWTAuth;
 
 class UserController extends Controller
 {
@@ -15,23 +19,19 @@ class UserController extends Controller
     {
         $req = FacadesValidator::make($request->all(), [
             'fullName' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:_book_store_users_',
+            'email' => 'required|string|email|max:100|unique:user',
+            'password' => 'required|min:3',
             'mobile' => 'required|digits:10'
         ]);
 
-        $req2 = FacadesValidator::make($request->all(), [
-            'password' => 'required|min:3',
-            'password_confirmation' => 'required|same:password'
-        ]);
-
-        $user = new BookStoreUsers();
+        $user = new User();
         $user->fullName = $request->input('fullName');
         $user->email = $request->input('email');
         $user->password = bcrypt($request->input('password'));
         $user->mobile = $request->input('mobile');
         $email = $request->get('email');
 
-        $userEmail = BookStoreUsers::where('email', $email)->first();
+        $userEmail = User::where('email', $email)->first();
         if ($userEmail) {
             return response()->json(['status' => 409, 'message' => "This email already exists...."]);
         }
@@ -40,29 +40,28 @@ class UserController extends Controller
             return response()->json(['status' => 403, 'message' => "Please enter the valid details"]);
         }
 
-        if ($req2->fails()) {
-            return response()->json(['status' => 403, 'message' => "Password doesn't match"]);
-        }
         $user->save();
         return response()->json(['status' => 201, 'message' => 'User succesfully registered!']);
     }
 
     public function login(Request $request)
     {
-        $this->validate($request, [
-            'email' => 'required|email',
-            'password' => 'required|
+        $req = FacadesValidator::make(
+            $request->all(),
+            [
+                'email' => 'required|email',
+                'password' => 'required|
             min:5',
-        ]);
+            ]
+        );
 
         $email = $request->get('email');
-        $user = BookStoreUsers::where('email', $email)->first();
+        $user = User::where('email', $email)->first();
 
         if (!$user) {
             return response()->json(['status' => 400, 'message' => "Invalid credentials! email doesn't exists"]);
         }
-        if (!$token = JWTAuth::fromUser($user)) {
-
+        if (!$token = JWTAuth::attempt($req->validated())) {
             return response()->json(['status' => 401, 'message' => 'Unauthenticated']);
         }
 
@@ -76,16 +75,45 @@ class UserController extends Controller
     protected function generateToken($token)
     {
         return response()->json([
-            'status' => 200,
+            'status' => 201,
             'message' => 'succesfully logged in',
             'token' => $token
         ]);
     }
 
+    public function signout()
+    {
+        try {
+            auth()->logout();
+        } catch (Exception $e) {
+
+            return response()->json(['status' => 201, 'message' => 'Token is invalid'], 201);
+        }
+
+        return response()->json(['status' => 200, 'message' => 'User logged out'], 200);
+    }
+
+    /**
+     * refresh the token
+     * @param refresh() refresh an instance on the given target and method
+     */
+    public function refresh()
+    {
+        return $this->generateToken(auth()->refresh());
+    }
+
+    /**
+     * User function gets the user from the database
+     */
+    public function user()
+    {
+        return response()->json(auth()->user());
+    }
+
 
     public function forgotPassword(Request $request)
     {
-        $user = BookStoreUsers::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
         if (!$user) {
             return response()->json(['status' => 401, 'message' => "we can't find a user with that email address."]);
         }
@@ -99,7 +127,7 @@ class UserController extends Controller
         if ($user && $passwordReset) {
             $user->notify(new ResetPasswordNotification($passwordReset->token));
         }
-        return response()->json(['status' => 200, 'message' => 'we have emailed your password reset link to respective mail']);
+        return response()->json(['status' => 201, 'message' => 'we have emailed your password reset link to respective mail']);
     }
 
     public function resetPassword(Request $request)
@@ -113,13 +141,13 @@ class UserController extends Controller
             return response()->json(['status' => 201, 'message' => "Password doesn't match"]);
         }
         $passwordReset = PasswordReset::where([
-            ['token', $request->bearerToken()]
+            ['token', $request->token]
         ])->first();
 
         if (!$passwordReset) {
             return response()->json(['status' => 401, 'message' => 'This token is invalid']);
         }
-        $user = BookStoreUsers::where('email', $passwordReset->email)->first();
+        $user = User::where('email', $passwordReset->email)->first();
 
         if (!$user) {
             return response()->json(['status' => 201, 'message' => "we can't find the user with that e-mail address"], 201);
