@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BooksController;
+use App\Http\Controllers\Customer;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,4 +31,8 @@ Route::group([
     Route::get('displayBooks', [BooksController::class, 'displayBooks']);
     Route::post('addToCart', [BooksController::class, 'addToCart']);
     Route::get('displayBooksInCart', [BooksController::class, 'displayBooksInCart']);
+    Route::post('removeFromCart', [BooksController::class, 'removeFromCart']);
+
+    Route::post('customerRegister', [Customer::class, 'customerRegister']);
+    Route::post('orderPlacedSuccessfull', [Customer::class, 'orderPlacedSuccessfull']);
 });

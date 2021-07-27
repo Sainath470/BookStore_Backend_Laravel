@@ -53,21 +53,7 @@ class BooksController extends Controller
 
         if ($userInDB == auth()->id()) {
             $book = Books::where('id', $book->id)->update(array('value' => '1',));
-            return response()->json(['status' => 201, 'message' => 'updated successfully']);
-        }
-    }
-
-    public function removeFromCart(Request $request)
-    {
-        $book = new Books();
-        $book->user_id = auth()->id();
-        $book->id = $request->input('id');
-
-        $userInDB = User::where('id', $book->user_id)->value('id');
-
-        if ($userInDB == auth()->id()) {
-            $book = Books::where('id', $book->id)->update(array('value' => '0',));
-            return response()->json(['status' => 201, 'message' => 'updated successfully']);
+            return response()->json(['status' => 201, 'message' => 'Book added to cart successfully']);
         }
     }
 
@@ -86,5 +72,19 @@ class BooksController extends Controller
                 ])->get();
         }
         return response()->json(['status' => 403, 'message' => 'Invalid token']);
+    }
+
+    public function removeFromCart(Request $request)
+    {
+        $book = new Books();
+        $book->user_id = auth()->id();
+        $book->id = $request->input('id');
+
+        $userInDB = User::where('id', $book->user_id)->value('id');
+
+        if ($userInDB == auth()->id()) {
+            $book = Books::where('id', $book->id)->update(array('value' => '0',));
+            return response()->json(['status' => 201, 'message' => 'removed from cart']);
+        }
     }
 }

@@ -6,12 +6,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\PasswordReset;
 use App\Notifications\ResetPasswordNotification;
-use CreateBooksTable;
-use CreateUsersTable;
 use Exception;
 use Illuminate\Support\Facades\Validator as FacadesValidator;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\JWTAuth as JWTAuthJWTAuth;
 
 class UserController extends Controller
 {
