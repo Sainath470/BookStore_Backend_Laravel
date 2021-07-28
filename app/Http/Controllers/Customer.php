@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Books;
 use App\Models\Customers;
 use App\Models\Orders;
 use App\Models\User;
 use App\Notifications\orderSuccessfullyPlacedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class Customer extends Controller
 {
@@ -39,14 +39,15 @@ class Customer extends Controller
         $order = User::where('email', $user_email)->first();
         $ord = Orders::create(
             [
-                'orderNumber' => $order->orderNumber = Str::random(12),
+                'orderNumber' => $order->orderNumber = rand(1000000, 99999999),
                 'customer_id' => $order->id,
                 'order_date' => $order->order_date = Carbon::now(),
             ]
         );
         if ($order && $ord) {
             $order->notify(new orderSuccessfullyPlacedNotification($ord->orderNumber));
+            Books::where('value', '1')->update((['value' => '0']));
         }
-        return response()->json(['message' => 'order created successfully']);
+        return response()->json(["orderNumber" => $ord->orderNumber]);
     }
 }

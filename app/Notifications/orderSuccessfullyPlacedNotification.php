@@ -42,7 +42,10 @@ class orderSuccessfullyPlacedNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->with($this->orderNumber);
+            ->line("You're order has been placed successfully.")
+            ->line("This is the order-id keep it further")
+            ->with($this->orderNumber)
+            ->line("These are the books you ordered");
     }
 
     /**
